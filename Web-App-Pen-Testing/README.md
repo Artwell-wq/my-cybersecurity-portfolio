@@ -98,34 +98,34 @@ Foundational for Advanced Testing: Built a strong foundation for exploring more 
 Screenshot 1: DVWA Login & Security Setup
 
 Caption: DVWA login page and confirmation of security level set to 'low'.
-![Successful SQL Injection Result](DVWALogin.png)
+![Successful SQL Injection Result](screenshots/DVWALogin.png)
 
 
 Screenshot 2: Burp Suite Proxy Configuration
 
 Caption: Browser proxy settings configured to send traffic through Burp Suite on 127.0.0.1:8080.
-![Burp Suite Proxy Configuration](browser-network-settings.png)
+![Burp Suite Proxy Configuration](screnshots/browser-network-settings.png)
 
 
 Screenshot 3: Burp Suite Intercepting Traffic
 
 Caption: Burp Suite's Proxy tab showing intercepted HTTP requests, confirming the proxy is active.
-![Burp Suite Intercepting](burpsuite-intercept.png)
+![Burp Suite Intercepting](screenshots/burpsuite-intercept.png)
 
 
 Screenshot 4: Successful SQL Injection Result
 
 Caption: Browser output showing all users (e.g., 'admin') after injecting '1' or '1'='1 -- #' into the User ID field.
-![Successful SQL Injection Result](succesful-sql-injection-result.png)
+![Successful SQL Injection Result](screenshots/succesful-sql-injection-result.png)
 
 
 Screenshot 5: SQLi Request in Burp Repeater
 
 Caption: The SQL Injection request captured in Burp Repeater, ready for modification and re-sending.
-![SQL Request in Burp Repeater](sql-injection-burp-repeater.png)
+![SQL Request in Burp Repeater](screenshots/sql-injection-burp-repeater.png)
 
 
 Screenshot 6: Successful XSS Alert
 
 Caption: Browser displaying a JavaScript alert box ('XSS!') after injecting <script>alert('XSS!')</script> into the 'Name' field.
-![Successful XSS Alertt](succesful-xss-alert.png)
+![Successful XSS Alertt](screenshots/succesful-xss-alert.png)
