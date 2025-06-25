@@ -138,6 +138,8 @@ Below are screenshots demonstrating key steps and observations during the projec
 
 8.1 Wireshark Capture of SYN Flood with Spoofed IPs
 Description: This screenshot from Wireshark shows the captured network traffic during the SYN flood attack utilizing randomized source IP addresses. The applied filter tcp.flags.syn == 1 and tcp.flags.ack == 0 effectively highlights the large number of SYN-only packets targeting 127.0.0.1 on port 80. The varied "Source" IP addresses (e.g., 230.78.213.51, 234.218.205.28) demonstrate successful IP spoofing.
+![Wireshark Capture of SYN Flood with Spoofed IPs](screenshots/ddos-spoofed-ip.png)
 
 8.2 Hping3 Installation Prompt
 Description: This screenshot shows the Kali Linux terminal prompting for the installation of hping3, confirming that the tool was not pre-installed in this specific environment, and demonstrating the process of installing it via sudo apt install hping3.
+![Hping3 Installation Prompt](screenshots/hp3-install.png)
