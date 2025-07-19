@@ -1,99 +1,97 @@
-Honeypot Project: SSH Honeypot Deployment & Analysis with Cowrie
-This project demonstrates the deployment of a Cowrie SSH honeypot on a Kali Linux virtual machine, reconfiguring the default SSH service, generating simulated attack traffic from a Metasploitable2 VM, and analyzing captured logs using jq.
+# Cowrie SSH Honeypot Deployment & Analysis
 
-1. Environment Setup
-Virtual Machines Used:
+This project details the deployment of a Cowrie SSH honeypot on a Kali Linux virtual machine, including the necessary network configuration, reconfiguring the default SSH service, generating simulated attack traffic from a Metasploitable2 VM, and analyzing captured logs using `jq`.
 
-Kali Linux: Configured as the honeypot host.
+## 1. Environment Setup
 
-Metasploitable2: Configured as the simulated attacker.
+* **Virtual Machines Used**:
+    * **Kali Linux**: Configured as the honeypot host.
+    * **Metasploitable2**: Configured as the simulated attacker.
+* **Virtualization Software**: VirtualBox.
+* **Network Configuration**: Both Kali Linux and Metasploitable2 VMs were configured to communicate via a **Host-Only Adapter (`vboxnet0`)** within VirtualBox, ensuring direct network connectivity for honeypot traffic. Initial troubleshooting involved resolving "Network is unreachable" errors by correctly setting up the Host-Only network and confirming IP address assignments in the `192.168.56.x` range.
 
-Virtualization Software: VirtualBox.
+### Screenshot Evidence: Network Configuration
 
-Network Configuration: Both Kali Linux and Metasploitable2 VMs were configured to communicate via a Host-Only Adapter (vboxnet0) within VirtualBox, ensuring direct network connectivity for honeypot traffic. Initial troubleshooting involved resolving "Network is unreachable" errors by correctly setting up the Host-Only network and confirming IP address assignments in the 192.168.56.x range.
+* **Kali IP Address before fix (NAT)**: Initial `ip a` output showing `10.0.2.15` on `eth0`, indicating NAT mode.
+    ![Kali_IP_Before_Fix_NAT](path/to/your/image_7adfde.png)
+* **Metasploitable2 SSH Attempt (Network Unreachable)**: SSH command failing from Metasploitable2 with "Network is unreachable" error.
+    ![Network_Unreachable_Error](path/to/your/image_7ae7be.png)
+* **VirtualBox Host Network Manager**: Configuration of `vboxnet0`, showing IPv4 Address and DHCP settings.
+    ![VirtualBox_Host_Network_Manager](path/to/your/image_of_host_network_manager.png)
+* **VirtualBox VM Network Settings**: Screenshots of both Kali and Metasploitable2 Adapter 1 set to "Host-only Adapter" and "Allow All" promiscuous mode.
+    * **Kali VM Network Adapter**:
+        ![Kali_VM_Network_Settings](path/to/your/image_of_kali_vm_network_settings.png)
+    * **Metasploitable2 VM Network Adapter**:
+        ![Metasploitable2_VM_Network_Settings](path/to/your/image_of_metasploitable2_vm_network_settings.png)
+* **Kali IP Address after fix (Host-Only)**: `ip a` output showing Kali's IP in the `192.168.56.x` range after network configuration.
+    ![Kali_IP_After_Fix_Host_Only](path/to/your/image_of_kali_ip_after_fix.png)
+* **Successful Ping/SSH**: Screenshot from Metasploitable2 showing successful `ping` to Kali's new IP, or a successful SSH connection (getting a password prompt from Cowrie).
+    ![Successful_SSH_Connection](path/to/your/image_7d9a1a.png)
 
-Screenshot Evidence:
+## 2. Kali Linux SSH Service Reconfiguration
 
-Kali IP Address before fix (NAT): Show ip a output with 10.0.2.15.
+* **Objective**: Move Kali's default SSH service from its standard port 22 to a non-standard port to free up port 22 for the Cowrie honeypot.
+* **Action**: Modified the `/etc/ssh/sshd_config` file on Kali Linux to change the `Port` directive from `22` to `2222`.
+* **Verification**: Confirmed that the `sshd` service was listening on `0.0.0.0:2222` using `sudo ss -tulnp | grep 22`.
 
-Metasploitable2 SSH Attempt (Network Unreachable): Show SSH command failing with "Network is unreachable".
+### Screenshot Evidence: SSH Reconfiguration
 
-VirtualBox Host Network Manager: Screenshot of vboxnet0 configuration (IPv4 Address, DHCP).
+* **`sshd_config` modification**: The `/etc/ssh/sshd_config` file showing `Port 2222` uncommented.
+    ![sshd_config_Port_2222](path/to/your/image_2de4bd.png)
+* **`ss -tulnp | grep 2222`**: Output confirming `sshd` listening on port `2222`.
+    ![sshd_listening_2222](path/to/your/image_f58517.png)
 
-VirtualBox VM Network Settings: Screenshots of both Kali and Metasploitable2 Adapter 1 set to "Host-only Adapter" and "Allow All" promiscuous mode.
+## 3. Cowrie Honeypot Deployment
 
-Kali IP Address after fix (Host-Only): Show ip a output with 192.168.56.x.
+* **Installation**: Cowrie was installed and set up within a Python virtual environment (`cowrie-env`) in the `/opt/cowrie` directory on the Kali Linux VM.
+* **Honeypot Activation**: Cowrie was started and verified to be listening on port `0.0.0.0:22`, effectively acting as the SSH honeypot. This allows it to intercept incoming SSH connections intended for the default SSH port.
 
-Successful Ping/SSH: Screenshot from Metasploitable2 showing successful ping to Kali's new IP, or a successful SSH connection (getting a password prompt from Cowrie).
+### Screenshot Evidence: Cowrie Deployment
 
-2. Kali Linux SSH Service Reconfiguration
-Objective: Move Kali's default SSH service from its standard port 22 to a non-standard port to free up port 22 for the Cowrie honeypot.
+* **`cd /opt/cowrie` and `source cowrie-env/bin/activate`**: Terminal showing activation of the Cowrie environment.
+    ![Cowrie_Env_Activate](path/to/your/image_f5db70.png)
+* **`bin/cowrie start`**: Command executed to start Cowrie.
+    ![Cowrie_Start_Command](path/to/your/image_of_cowrie_start.png)
+* **`ss -tulnp | grep 22` (Cowrie)**: Output showing `twistd` or `python3` (Cowrie's process) listening on port `22`.
+    ![Cowrie_Listening_22](path/to/your/image_f56237.png)
 
-Action: Modified the /etc/ssh/sshd_config file on Kali Linux to change the Port directive from 22 to 2222.
+## 4. Simulated Attack Traffic Generation
 
-Verification: Confirmed that the sshd service was listening on 0.0.0.0:2222 using sudo ss -tulnp | grep 22.
+* **Attacker VM**: Metasploitable2 was used to simulate an attacker.
+* **Wordlist Creation**: Custom wordlists for usernames (`users.txt`) and passwords (`passwords.txt`) were created on Metasploitable2 in `/opt/metasploitable_wordlists/`. These were used for brute-force SSH login attempts.
+* **Attack Execution**: SSH login attempts were initiated from Metasploitable2 targeting the Kali Linux honeypot's IP address on port 22.
+* **Observed Behavior**: Cowrie successfully captured these connection attempts and logged them, even when authentication failed with "Permission denied" or "Connection closed" messages. This demonstrated Cowrie's ability to log even unsuccessful attack attempts.
 
-Screenshot Evidence:
+### Screenshot Evidence: Traffic Generation
 
-sshd_config modification: Show the /etc/ssh/sshd_config file with Port 2222 uncommented.
+* **Wordlist files**: `ls -l /opt/metasploitable_wordlists/` output showing `users.txt` and `passwords.txt`.
+    ![Metasploitable2_Wordlists](path/to/your/image_7dac21.png)
+* **SSH attempts from Metasploitable2**: Terminal showing the `ssh <Kali_IP>` command and subsequent password prompts and "Permission denied" or "Connection closed" messages.
+    ![SSH_Attempts](path/to/your/image_7d95e2.png)
+* **Cowrie `tail -f cowrie.log`**: Live log output from Kali's terminal showing captured login attempts (e.g., "failed auth", "unauthorized login").
+    ![Cowrie_Live_Log_Attempts](path/to/your/image_7cc080.png)
 
-ss -tulnp | grep 2222: Show sshd listening on port 2222.
+## 5. Log Analysis with `jq`
 
-3. Cowrie Honeypot Deployment
-Installation: Cowrie was installed and set up within a Python virtual environment (cowrie-env) in the /opt/cowrie directory on the Kali Linux VM.
+* **Log Location**: Cowrie logs were consistently stored in JSON format in `/opt/cowrie/var/log/cowrie/cowrie.json`.
+* **Troubleshooting `jq` Errors**: Initial attempts to parse logs encountered `jq` errors ("boolean (true) cannot be matched" or "Cannot index string with string 'src_ip'"). This was resolved by:
+    * Implementing robust `jq` filters: `select(type == "object")` to ensure only valid JSON objects are processed, and `has("fieldname")` to check for field existence before access.
+    * Backing up and clearing potentially corrupted `cowrie.json` files (`mv /opt/cowrie/var/log/cowrie/cowrie.json /opt/cowrie/var/log/cowrie/cowrie.json.bak`) and regenerating fresh log data.
+* **Successful Analysis**: Once `jq` errors were resolved and fresh logs were generated, the following data points were successfully extracted and analyzed:
+    * **Unique Source IPs**: Identified the Metasploitable2 VM's IP address (e.g., `192.168.56.101` or `192.168.56.103`) as the source of connections.
+    * **Login Attempts**: Captured details of all attempted logins, including timestamps, usernames, passwords, and the `eventid` (e.g., `cowrie.login.failed`).
+    * **Top Attempted Usernames**: Summarized the most frequently targeted usernames in the login attempts.
+    * *(Note: As no "successful" simulated logins occurred during testing, command execution logs were not generated, which is expected behavior for a honeypot not designed to grant full access.)*
 
-Honeypot Activation: Cowrie was started and verified to be listening on port 0.0.0.0:22, effectively acting as the SSH honeypot. This allows it to intercept incoming SSH connections intended for the default SSH port.
+### Screenshot Evidence: Log Analysis
 
-Screenshot Evidence:
-
-cd /opt/cowrie and source cowrie-env/bin/activate: Show activating the Cowrie environment.
-
-bin/cowrie start: Show the command being run.
-
-ss -tulnp | grep 22 (Cowrie): Show twistd or python3 listening on port 22.
-
-4. Simulated Attack Traffic Generation
-Attacker VM: Metasploitable2 was used to simulate an attacker.
-
-Wordlist Creation: Custom wordlists for usernames (users.txt) and passwords (passwords.txt) were created on Metasploitable2 in /opt/metasploitable_wordlists/. These were used for brute-force SSH login attempts.
-
-Attack Execution: SSH login attempts were initiated from Metasploitable2 targeting the Kali Linux honeypot's IP address on port 22.
-
-Observed Behavior: Cowrie successfully captured these connection attempts and logged them, even when authentication failed with "Permission denied" or "Connection closed" messages. This demonstrated Cowrie's ability to log even unsuccessful attack attempts.
-
-Screenshot Evidence:
-
-Wordlist files: Show ls -l /opt/metasploitable_wordlists/ output with users.txt and passwords.txt.
-
-SSH attempts from Metasploitable2: Show the ssh <Kali_IP> command and subsequent password prompts and "Permission denied" or "Connection closed" messages.
-
-Cowrie tail -f cowrie.log: Show live log output capturing login attempts (e.g., "failed auth", "unauthorized login").
-
-5. Log Analysis with jq
-Log Location: Cowrie logs were consistently stored in JSON format in /opt/cowrie/var/log/cowrie/cowrie.json.
-
-Troubleshooting jq Errors: Initial attempts to parse logs encountered jq errors ("boolean (true) cannot be matched" or "Cannot index string with string 'src_ip'"). This was resolved by:
-
-Implementing robust jq filters: select(type == "object") to ensure only valid JSON objects are processed, and has("fieldname") to check for field existence before access.
-
-Backing up and clearing potentially corrupted cowrie.json files (mv /opt/cowrie/var/log/cowrie/cowrie.json /opt/cowrie/var/log/cowrie/cowrie.json.bak) and regenerating fresh log data.
-
-Successful Analysis: Once jq errors were resolved and fresh logs were generated, the following data points were successfully extracted and analyzed:
-
-Unique Source IPs: Identified the Metasploitable2 VM's IP address (e.g., 192.168.56.101 or 192.168.56.103) as the source of connections.
-
-Login Attempts: Captured details of all attempted logins, including timestamps, usernames, passwords, and the eventid (e.g., cowrie.login.failed).
-
-Top Attempted Usernames: Summarized the most frequently targeted usernames in the login attempts.
-
-(Note: As no "successful" simulated logins occurred during testing, command execution logs were not generated, which is expected behavior for a honeypot not designed to grant full access.)
-
-Screenshot Evidence:
-
-ls -l /opt/cowrie/var/log/cowrie/: Show cowrie.json.bak and the newly created cowrie.json (initially 0 bytes) after clearing logs.
-
-jq -r 'select(type == "object" and .eventid == "cowrie.session.connect" and has("src_ip")) | .src_ip' ...: Show output with Metasploitable2 IP.
-
-`jq -r 'select(type == "object" and .eventid | test("cowrie.login.") ...': Show output with parsed login attempts (including failed ones).
-
-jq -r 'select(type == "object" and .eventid | test("cowrie.login.") and has("username")) | .username' ... | sort | uniq -c | sort -nr | head: Show output with top attempted usernames.
+* **`ls -l /opt/cowrie/var/log/cowrie/`**: Output showing `cowrie.json.bak` and the newly created (initially 0 bytes) `cowrie.json` after clearing logs.
+    ![Cowrie_Log_Files](path/to/your/image_7bc422.png)
+* **`jq -r 'select(type == "object" and .eventid == "cowrie.session.connect" and has("src_ip")) | .src_ip' ...`**: Output displaying unique source IPs that connected.
+    ![Unique_Source_IPs](path/to/your/image_7bdac9.png)
+* **`jq -r 'select(type == "object" and .eventid | test("cowrie.login.") ...'**: Output with parsed login attempts (including failed ones).
+    ![Parsed_Login_Attempts](path/to/your/image_7bd343.png)
+* **`jq -r 'select(type == "object" and .eventid | test("cowrie.login.") and has("username")) | .username' ... | sort | uniq -c | sort -nr | head`**: Output showing the top attempted usernames.
+    ![Top_Attempted_Usernames](path/to/your/image_of_top_usernames.png)
+* *(Optional: If you managed to get command execution logged, include a screenshot of the `jq` output for `cowrie.command.input`.)*
+    ![Executed_Commands_Log](path/to/your/image_of_executed_commands.png)
